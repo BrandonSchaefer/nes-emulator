@@ -23,7 +23,109 @@
  * SOFTWARE.
  */
 
+#include <bitset>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <vector>
+
+#include "cpu.h"
+
+namespace
+{
+uint32_t const expected_magic_nes_header{0x1a53454e};
+uint32_t const kilobyte{1024};
+}
+
+std::vector<uint8_t> read_in_file(std::string const& path)
+{
+    std::ifstream is(path, std::ifstream::binary);
+    is >> std::noskipws;
+    return std::vector<uint8_t>(std::istream_iterator<uint8_t>(is), {});
+}
+
+struct RomHeader
+{
+    uint32_t nes_magic;
+    uint8_t  prg_size;
+    uint8_t  chr_size;
+    uint8_t  flags_six;
+    uint8_t  flags_seven;
+    uint8_t  prg_ram_size;
+    uint8_t  flags_nine;
+};
+
+std::ostream& operator<<(std::ostream& os, RomHeader const& header)
+{
+    return os << "PRG ROM: " << std::hex << "0x" << (int)header.prg_size << std::endl
+              << "CHR ROM: " << std::hex << "0x" << (int)header.chr_size << std::endl
+              << "Flgas 6: " << std::bitset<8>(header.flags_six) << std::endl
+              << "Flgas 7: " << std::bitset<8>(header.flags_seven) << std::endl
+              << "PRG RAM: " << std::hex << "0x" << (int)header.prg_ram_size << std::endl
+              << "Flgas 9: " << std::bitset<8>(header.flags_nine);
+}
+
 int main()
 {
+    emulator::CPU cpu;
+
+    auto raw_rom = read_in_file("rom.nes");
+    uint32_t current_byte = 0x10;
+
+    if (raw_rom.size() < 0xF)
+    {
+        std::cerr << "Invalid size, less then the expect" << std::endl;
+        return -1;
+    }
+
+    RomHeader header = *reinterpret_cast<RomHeader*>(raw_rom.data());
+
+    if (header.nes_magic != expected_magic_nes_header)
+    {
+        std::cerr << "Incorrect file type, expect *.nes" << std::endl;
+        return -1;
+    }
+
+    auto lower_nibble = header.flags_six >> 4;
+    auto upper_nibble = header.flags_seven >> 4;
+    auto mapper = lower_nibble | upper_nibble << 4;
+
+    auto mirror_mode    = header.flags_six & 0x1;
+    auto disable_mirror = (header.flags_six >> 3) & 0x1;
+
+    auto battery = (header.flags_six >> 1) & 0x1;
+
+    auto trainer = (header.flags_six >> 2) & 0x1;
+
+    // TODO
+    if (trainer)
+    {
+        current_byte += 0x200;
+    }
+
+    auto prg_byte_size = header.prg_size * kilobyte * 16;
+    auto chr_byte_size = header.chr_size * kilobyte * 8;
+
+    if (raw_rom.size() != current_byte + prg_byte_size + chr_byte_size)
+    {
+        // TODO need to account for extra things like PlayerChoice10
+        std::cerr << "Assumption on file size. We to many or to few bytes in the *.nes file!" << std::endl;
+    }
+
+    std::vector<uint8_t> prg(raw_rom.data(), raw_rom.data() + current_byte + prg_byte_size);
+    current_byte += prg_byte_size;
+
+    std::vector<uint8_t> chr(raw_rom.data() + current_byte, raw_rom.data() + current_byte + chr_byte_size);
+    current_byte += chr_byte_size;
+
+    std::cout << header << " " << std::endl
+              << "Mapper number: "  << std::hex << "0x" << mapper << std::endl << std::dec
+              << "MirrorMode: " << (mirror_mode ? "Vertical" : "Horizontal") << std::endl
+              << "DisableMirror: " << disable_mirror << std::endl
+              << "Battery: " << battery << std::endl
+              << "Trainer: " << trainer << std::endl
+              << "PrgBytes: " << prg.size() << std::endl
+              << "ChrBytes: " << chr.size() << std::endl;
+
     return 0;
 }

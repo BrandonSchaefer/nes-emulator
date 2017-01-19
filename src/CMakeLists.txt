@@ -7,10 +7,14 @@ set (NES_EMULATOR_REQUIRED
 pkg_check_modules(NES_EMULATOR REQUIRED ${NES_EMULATOR_REQUIRED})
 
 set (NES_EMULATOR_LOADER_SRC
-     main.c
+     main.cpp
+     cpu.cpp
+     cpu_instructions.cpp
 )
 
 set (NES_EMULATOR_LOADER_HDR
+     cpu.h
+     cpu_instructions.h
 )
 
 include_directories (${NES_EMULATOR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
