@@ -135,35 +135,50 @@ uint16_t emulator::CPU::address_to_arguemnts() const
     switch (info.mode)
     {
         case OpMode::zero_page_x:
-            break;
+            // Check if page has been crossed
+            return read8(program_counter_ + 1) + x_register_;
         case OpMode::zero_page_y:
-            break;
+            // Check if page has been crossed
+            return read8(program_counter_ + 1) + y_register_;
         case OpMode::absolute_x:
-            break;
+            // Check if page has been crossed
+            return read16(program_counter_ + 1) + x_register_;
         case OpMode::absolute_y:
-            break;
+            // Check if page has been crossed
+            return read16(program_counter_ + 1) + y_register_;
         case OpMode::indexed_x:
-            break;
+            return read16(read8(program_counter_ + 1) + x_register_);
         case OpMode::indexed_y:
-            break;
+            return read16(read8(program_counter_ + 1) + y_register_);
         case OpMode::implicit:
-            break;
+            return 0;
         case OpMode::accumulator:
-            break;
+            return 0;
         case OpMode::immediate:
             return program_counter_ + 1;
         case OpMode::zero_page:
-            break;
+            return read8(program_counter_ + 1);
         case OpMode::absolute:
-            break;
+            return read16(program_counter_ + 1);
         case OpMode::relative:
-            break;
+        {
+            uint16_t offset = read8(program_counter_ + 1);
+
+            // Negative
+            if (offset & 0x100)
+            {
+                return program_counter_ + 2 + offset - 0x100;
+            }
+            else
+            {
+                return program_counter_ + 2 + offset;
+            }
+        }
         case OpMode::indirect:
-            break;
+            return read16(read8(program_counter_ + 1));
     }
 
-    // TODO Go throught he modes, for now assume immediate
-    return program_counter_ + 1;
+    throw std::runtime_error("Invalid mode for op code");
 }
 
 void emulator::CPU::set_program_counter(uint16_t address)

@@ -73,6 +73,8 @@ void emulator::sbc(CPU* cpu)
 
 TEST_F(TestCPUInstructions, test_adc)
 {
+    // op code ADC - immediate
+    cpu.write8(default_pc, 0x69);
     // Write 5 to the argument for ADC
     cpu.write8(default_pc + 1, 0x05);
 
@@ -95,6 +97,8 @@ TEST_F(TestCPUInstructions, test_adc_with_carry)
 
 TEST_F(TestCPUInstructions, test_and)
 {
+    // op code AND - immediate
+    cpu.write8(default_pc, 0x29);
     cpu.write8(default_pc + 1, 0x2);
 
     emulator::nd(&cpu);
@@ -104,12 +108,15 @@ TEST_F(TestCPUInstructions, test_and)
 
 TEST_F(TestCPUInstructions, test_asl)
 {
+    // op code ASL - absolute
+    cpu.write8(default_pc, 0x0E);
     // Testing non acc mode, should shift mem location 1 left
-    cpu.write8(default_pc + 1, default_acc);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, default_acc);
 
     emulator::asl(&cpu);
 
-    EXPECT_EQ(cpu.read8(0x1), default_acc << 1);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_acc << 1);
 }
 
 TEST_F(TestCPUInstructions, test_asl_acc)
@@ -125,24 +132,30 @@ TEST_F(TestCPUInstructions, test_asl_acc)
 
 TEST_F(TestCPUInstructions, test_rol)
 {
-    cpu.write8(default_pc + 1, 0x80);
+    // op code ROL - absolute
+    cpu.write8(default_pc, 0x2E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x80);
 
     emulator::rol(&cpu);
 
     // With no carry set, we'll have 0 after the shift
-    EXPECT_EQ(cpu.read8(0x1), 0);
+    EXPECT_EQ(cpu.read8(default_pc + 3), 0);
 }
 
 TEST_F(TestCPUInstructions, test_rol_with_carry)
 {
-    cpu.write8(default_pc + 1, 0x80);
+    // op code ROL - absolute
+    cpu.write8(default_pc, 0x2E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x80);
 
     cpu.add_flags(emulator::carry);
 
     emulator::rol(&cpu);
 
     // With carry set, we'll move that into 0x1
-    EXPECT_EQ(cpu.read8(0x1), 1);
+    EXPECT_EQ(cpu.read8(default_pc + 3), 1);
 }
 
 TEST_F(TestCPUInstructions, test_rol_acc)
@@ -173,24 +186,30 @@ TEST_F(TestCPUInstructions, test_rol_acc_with_carry)
 
 TEST_F(TestCPUInstructions, test_ror)
 {
-    cpu.write8(default_pc + 1, 0x01);
+    // op code ROR - absolute
+    cpu.write8(default_pc, 0x6E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x01);
 
     emulator::ror(&cpu);
 
     // With no carry set, we'll have 0 after the shift
-    EXPECT_EQ(cpu.read8(0x1), 0);
+    EXPECT_EQ(cpu.read8(default_pc + 3), 0);
 }
 
 TEST_F(TestCPUInstructions, test_ror_with_carry)
 {
-    cpu.write8(default_pc + 1, 0x01);
+    // op code ROR - absolute
+    cpu.write8(default_pc, 0x6E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x01);
 
     cpu.add_flags(emulator::carry);
 
     emulator::ror(&cpu);
 
     // With carry set, we'll move it to 0x80
-    EXPECT_EQ(cpu.read8(0x1), 0x80);
+    EXPECT_EQ(cpu.read8(default_pc + 3), 0x80);
 }
 
 TEST_F(TestCPUInstructions, test_ror_acc)
@@ -280,29 +299,38 @@ TEST_F(TestCPUInstructions, test_sei)
 
 TEST_F(TestCPUInstructions, test_sta)
 {
-    cpu.write8(default_pc + 1, 0x1);
+    // op code STA - absolute
+    cpu.write8(default_pc, 0x8D);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x1);
 
     emulator::sta(&cpu);
 
-    EXPECT_EQ(cpu.read8(0x1), default_acc);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_acc);
 }
 
 TEST_F(TestCPUInstructions, test_stx)
 {
-    cpu.write8(default_pc + 1, 0x1);
+    // op code STX - absolute
+    cpu.write8(default_pc, 0x8E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x1);
 
     emulator::stx(&cpu);
 
-    EXPECT_EQ(cpu.read8(0x1), default_x);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_x);
 }
 
 TEST_F(TestCPUInstructions, test_sty)
 {
-    cpu.write8(default_pc + 1, 0x1);
+    // op code STY - absolute
+    cpu.write8(default_pc, 0x8C);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x1);
 
     emulator::sty(&cpu);
 
-    EXPECT_EQ(cpu.read8(0x1), default_y);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_y);
 }
 
 TEST_F(TestCPUInstructions, test_tax)
@@ -360,6 +388,8 @@ TEST_F(TestCPUInstructions, test_lda)
 
 TEST_F(TestCPUInstructions, test_ldx)
 {
+    // op code LDX - immediate
+    cpu.write8(default_pc, 0xA2);
     cpu.write8(default_pc + 1, 0x56);
 
     emulator::ldx(&cpu);
@@ -369,6 +399,8 @@ TEST_F(TestCPUInstructions, test_ldx)
 
 TEST_F(TestCPUInstructions, test_ldy)
 {
+    // op code LDY - immediate
+    cpu.write8(default_pc, 0xA0);
     cpu.write8(default_pc + 1, 0x56);
 
     emulator::ldy(&cpu);
@@ -421,11 +453,14 @@ TEST_F(TestCPUInstructions, test_ora)
 
 TEST_F(TestCPUInstructions, test_lsr)
 {
-    cpu.write8(default_pc + 1, default_acc);
+    // op code LSR - absolute
+    cpu.write8(default_pc, 0x4E);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, default_acc);
 
     emulator::lsr(&cpu);
 
-    EXPECT_EQ(cpu.read8(default_pc + 1), default_acc >> 1);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_acc >> 1);
 }
 
 TEST_F(TestCPUInstructions, test_lsr_acc)
@@ -440,6 +475,8 @@ TEST_F(TestCPUInstructions, test_lsr_acc)
 
 TEST_F(TestCPUInstructions, test_cmp)
 {
+    // op code CMP - immediate
+    cpu.write8(default_pc, 0xC9);
     cpu.write8(default_pc + 1, default_acc);
 
     emulator::cmp(&cpu);
@@ -449,6 +486,8 @@ TEST_F(TestCPUInstructions, test_cmp)
 
 TEST_F(TestCPUInstructions, test_cpx)
 {
+    // op code CPX - immediate
+    cpu.write8(default_pc, 0xE0);
     cpu.write8(default_pc + 1, default_x);
 
     emulator::cpx(&cpu);
@@ -458,6 +497,8 @@ TEST_F(TestCPUInstructions, test_cpx)
 
 TEST_F(TestCPUInstructions, test_cpy)
 {
+    // op code CPY - immediate
+    cpu.write8(default_pc, 0xC0);
     cpu.write8(default_pc + 1, default_y);
 
     emulator::cpy(&cpu);
@@ -467,11 +508,14 @@ TEST_F(TestCPUInstructions, test_cpy)
 
 TEST_F(TestCPUInstructions, test_inc)
 {
-    cpu.write8(default_pc + 1, default_acc);
+    // op code INC - absolute
+    cpu.write8(default_pc, 0xEE);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, default_acc);
 
     emulator::inc(&cpu);
 
-    EXPECT_EQ(cpu.read8(default_pc + 1), default_acc + 1);
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_acc + 1);
 }
 
 TEST_F(TestCPUInstructions, test_inx)
@@ -490,11 +534,13 @@ TEST_F(TestCPUInstructions, test_iny)
 
 TEST_F(TestCPUInstructions, test_jmp)
 {
-    cpu.write8(default_pc + 1, 0x0);
+    // op code JMP - absolute
+    cpu.write8(default_pc, 0x4C);
+    cpu.write8(default_pc + 1, default_pc + 3);
 
     emulator::jmp(&cpu);
 
-    printf("%i\n", cpu.program_counter());
+    EXPECT_EQ(cpu.program_counter(), default_pc + 3);
 }
 
 TEST_F(TestCPUInstructions, test_cpu_step_adc_immediate)
