@@ -1,7 +1,7 @@
 //-*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
 /* The MIT License (MIT)
  *
- * Copyright (c) 2016 Brandon Schaefer
+ * Copyright (c) 2017 Brandon Schaefer
  *                    brandontschaefer@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -74,34 +74,73 @@ Relative
 #ifndef NES_EMULATOR_CPU_H_
 #define NES_EMULATOR_CPU_H_ 
 
+#include <array>
 #include <cmath>
 #include <cstdint>
-#include <array>
+#include <functional>
+
+#include "cpu_instructions.h"
 
 namespace emulator
 {
+
+enum CPUFlag : uint8_t
+{
+    carry     = 1 << 0, // C
+    zero      = 1 << 1, // Z
+    interrupt = 1 << 2, // I
+    decimal   = 1 << 3, // D
+    brk_inter = 1 << 4, // B
+    // unused = 1 << 5, 
+    overflow  = 1 << 6, // V
+    sign      = 1 << 7  // N
+};
 
 class CPU
 {
 public:
     CPU();
 
+    void reset();
+
     uint8_t  read8 (uint16_t address) const;
     uint16_t read16(uint16_t address) const;
 
     void write8(uint16_t address, uint8_t value);
 
-private:
+    // TODO Maybe btter name here or think of their relationship
+    uint16_t address_to_arguemnts() const;
+
+    uint16_t program_counter() const;
+    uint8_t  accumulator() const;
+    uint8_t  x_register() const;
+    uint8_t  y_register() const;
+
+    void set_program_counter(uint16_t address);
+    void set_accumulator(uint8_t value);
+    void set_x_register(uint8_t value);
+    void set_y_register(uint8_t value);
+
+    uint8_t status() const;
+    void update_flags(std::function<bool()> const& f, CPUFlag flags);
+    void add_flags(CPUFlag value);
+    void remove_flags(CPUFlag value);
+
+    OpMode current_mode() const;
+
+    void push(uint8_t byte);
+    uint8_t pop();
+
     void print_instruction() const;
 
-    uint16_t program_counter_{0x34};
-    uint8_t a_{0};
-    uint8_t x_{0};
-    uint8_t y_{0};
+private:
+    uint16_t program_counter_{0};
+    uint8_t accumulator_{0};
+    uint8_t x_register_{0};
+    uint8_t y_register_{0};
     uint8_t stack_{0};
-    uint8_t status_{0xFD};
+    uint8_t status_{0};
 
-    // 0xFFFF addressable space
     std::array<uint8_t, 65536> memory;
 };
 

@@ -1,7 +1,7 @@
 //-*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
 /* The MIT License (MIT)
  *
- * Copyright (c) 2016 Brandon Schaefer
+ * Copyright (c) 2017 Brandon Schaefer
  *                    brandontschaefer@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -26,14 +26,14 @@
 #ifndef NES_EMULATOR_CPU_INSTRUCTIONS_H_
 #define NES_EMULATOR_CPU_INSTRUCTIONS_H_
 
-#include "cpu.h"
-
 #include <array>
 #include <cstdint>
 #include <functional>
 
 namespace emulator
 {
+class CPU;
+
 namespace
 {
 uint8_t const zero_page_cycles{0};

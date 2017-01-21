@@ -7,18 +7,23 @@ set (NES_EMULATOR_REQUIRED
 pkg_check_modules(NES_EMULATOR REQUIRED ${NES_EMULATOR_REQUIRED})
 
 set (NES_EMULATOR_LOADER_SRC
-     main.cpp
      cpu.cpp
      cpu_instructions.cpp
+     ppu.cpp
 )
 
 set (NES_EMULATOR_LOADER_HDR
      cpu.h
      cpu_instructions.h
+     ppu.h
 )
 
 include_directories (${NES_EMULATOR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})
 
-add_executable (nes_emulator ${NES_EMULATOR_LOADER_SRC} ${NES_EMULATOR_LOADER_HDR})
+add_library (nes_emulator ${NES_EMULATOR_LOADER_SRC} ${NES_EMULATOR_LOADER_HDR})
 
 target_link_libraries (nes_emulator ${NES_EMULATOR_LIBRARIES} ${NES_EMULATOR_LDFLAGS})
+
+add_executable (nes main.cpp)
+
+target_link_libraries (nes nes_emulator)

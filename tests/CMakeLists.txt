@@ -1,17 +1,21 @@
 set (GTEST_BACKEND_SOURCE
    test_main.cpp
+   test_cpu.cpp
 )
 
-add_executable (gtest-test-PROJECT_NAME ${GTEST_BACKEND_SOURCE})
+include_directories (${NES_EMULATOR_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src)
+
+add_executable (gtest-test-nes-emulator ${GTEST_BACKEND_SOURCE})
 
 target_link_libraries (
-    gtest-test-PROJECT_NAME
+    gtest-test-nes-emulator
     pthread
+    nes_emulator
     ${GTEST_BOTH_LIBRARIES}
     ${GMOCK_LIBRARY}
     ${GMOCK_MAIN_LIBRARY}
 )
 
-add_custom_target (check COMMAND gtest-test-PROJECT_NAME)
+add_custom_target (check COMMAND gtest-test-nes-emulator)
 
-add_dependencies(gtest-test-PROJECT_NAME GMock)
+add_dependencies(gtest-test-nes-emulator GMock)
