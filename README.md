@@ -1,1 +1,9 @@
-Simple CMake blank project. Use to get up and running for a new project.
+// WORK IN PROGRESS
+
+Nes Emulator
+
+    http://wiki.nesdev.com/w/index.php/NES_reference_guide
+
+Depends on
+
+    SDL2
