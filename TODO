@@ -1,0 +1,11 @@
+Emulator:
+    CPU - Missing Branches/Modes
+    PPU - Missing everything!
+    APU - Missing everything!
+    Mappers - Missing everything!
+    iNES - Done
+
+UI:
+    Rendering the ppu
+    Getting events for the controller
+    Actually do this part!
