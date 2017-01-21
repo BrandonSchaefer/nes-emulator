@@ -115,21 +115,26 @@ public:
     uint8_t  accumulator() const;
     uint8_t  x_register() const;
     uint8_t  y_register() const;
+    uint8_t  stack() const;
 
     void set_program_counter(uint16_t address);
-    void set_accumulator(uint8_t value);
-    void set_x_register(uint8_t value);
-    void set_y_register(uint8_t value);
+    void set_accumulator(uint8_t a);
+    void set_x_register(uint8_t x);
+    void set_y_register(uint8_t y);
+    void set_stack(uint8_t sp);
 
     uint8_t status() const;
     void update_flags(std::function<bool()> const& f, CPUFlag flags);
-    void add_flags(CPUFlag value);
-    void remove_flags(CPUFlag value);
+    void add_flags(uint8_t flags);
+    void remove_flags(uint8_t flags);
 
     OpMode current_mode() const;
 
     void push(uint8_t byte);
     uint8_t pop();
+
+    // return cycles?
+    uint8_t step();
 
     void print_instruction() const;
 

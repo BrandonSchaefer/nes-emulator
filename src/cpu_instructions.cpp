@@ -106,19 +106,17 @@ void emulator::nd(CPU* cpu)
 void emulator::asl(CPU* cpu)
 {
     auto current_mode = cpu->current_mode();
-    uint8_t new_value = 0;
+    uint16_t new_value = 0;
 
     if (current_mode == emulator::accumulator)
     {
-        auto a = cpu->accumulator();
-        new_value = a << 1;
+        new_value = cpu->accumulator() << 1;
         cpu->set_accumulator(new_value);
     }
     else
     {
         auto address = cpu->address_to_arguemnts();
-        auto mem = cpu->read8(address);
-        new_value = mem << 1;
+        new_value = cpu->read8(address) << 1;
         cpu->write8(address, new_value);
     }
 
@@ -212,8 +210,13 @@ void emulator::bpl(CPU* cpu)
 // BRK Force Break
 void emulator::brk(CPU* cpu)
 {
-    // TODO
-    // PC + 2 ToS P ToS
+    auto pc = cpu->program_counter() + 1;
+    cpu->push(pc >> 8 & 0xFF);
+    cpu->push(pc & 0xFF);
+    cpu->add_flags(emulator::brk_inter);
+    cpu->push(cpu->status());
+    cpu->add_flags(interrupt);
+    cpu->set_program_counter(cpu->read8(0xFFFE) | cpu->read8(0xFFFF) << 8);
 }
 
 // BVC Branch on Overflow Clear
@@ -345,7 +348,7 @@ void emulator::inx(CPU* cpu)
 // INY Increment Index Y by One
 void emulator::iny(CPU* cpu)
 {
-    auto y = cpu->x_register();
+    auto y = cpu->y_register();
     cpu->set_y_register((y + 1) & 0xFF);
     update_zero_sign(cpu, y);
 }
@@ -360,6 +363,11 @@ void emulator::jmp(CPU* cpu)
 // JSR Jump to New Location Saving Return Address
 void emulator::jsr(CPU* cpu)
 {
+    auto pc = cpu->program_counter() - 1;
+    cpu->push(pc << 8 & 0xFF);
+    cpu->push(pc & 0xFF);
+    auto address = cpu->address_to_arguemnts();
+    cpu->set_program_counter(address);
 }
 
 // LDA Load Accumulator with Memory
@@ -389,6 +397,23 @@ void emulator::ldy(CPU* cpu)
 // LSR Shift Right One Bit (Memory or Accumulator)
 void emulator::lsr(CPU* cpu)
 {
+    auto current_mode = cpu->current_mode();
+    // 16 incase we have a carry
+    uint16_t new_value = 0;
+
+    if (current_mode == emulator::accumulator)
+    {
+        new_value = cpu->accumulator() >> 1;
+        cpu->set_accumulator(new_value);
+    }
+    else
+    {
+        auto address = cpu->address_to_arguemnts();
+        new_value = cpu->read8(address) >> 1;
+        cpu->write8(address, new_value);
+    }
+
+    update_zero_sign(cpu, new_value);
 }
 
 // NOP No Operation
@@ -399,51 +424,147 @@ void emulator::nop(CPU* cpu)
 // ORA "OR" Memory with Accumulator
 void emulator::ora(CPU* cpu)
 {
+    auto mem = cpu->read8(cpu->address_to_arguemnts());
+    cpu->set_accumulator(mem | cpu->accumulator());
+    update_zero_sign(cpu, mem);
 }
 
 // PHA Push Accumulator on Stack
 void emulator::pha(CPU* cpu)
 {
+    cpu->push(cpu->accumulator());
 }
 
 // PHP Push Processor Status on Stack
 void emulator::php(CPU* cpu)
 {
+    cpu->push(cpu->status());
 }
 
 // PLA Pull Accumulator from Stack
 void emulator::pla(CPU* cpu)
 {
+    cpu->set_accumulator(cpu->pop());
+    update_zero_sign(cpu, cpu->accumulator());
 }
 
 // PLP Pull Processor Status from Stack
 void emulator::plp(CPU* cpu)
 {
+    auto top_of_stack = cpu->pop();
+    cpu->add_flags(top_of_stack);
+    update_zero_sign(cpu, top_of_stack);
 }
 
 // ROL Rotate One Bit Left (Memory or Accumulator)
 void emulator::rol(CPU* cpu)
 {
+    auto current_mode = cpu->current_mode();
+    uint16_t new_value = 0;
+
+    if (current_mode == emulator::accumulator)
+    {
+        new_value = cpu->accumulator() << 1;
+        if (cpu->status() & emulator::carry)
+        {
+            new_value |= 0x1;
+        }
+
+        cpu->set_accumulator(new_value);
+    }
+    else
+    {
+        auto address = cpu->address_to_arguemnts();
+        new_value = cpu->read8(address) << 1;
+        if (cpu->status() & emulator::carry)
+        {
+            new_value |= 0x1;
+        }
+
+        cpu->write8(address, new_value);
+    }
+
+    update_carry(cpu, new_value);
+    update_zero_sign(cpu, new_value);
 }
 
 // ROR Rotate One Bit Right (Memory or Accumulator)
 void emulator::ror(CPU* cpu)
 {
+    auto current_mode = cpu->current_mode();
+    uint16_t new_value = 0;
+
+    if (current_mode == emulator::accumulator)
+    {
+        new_value = cpu->accumulator();
+        if (cpu->status() & emulator::carry)
+        {
+            new_value |= 0x100;
+        }
+
+        // If we are about to shift the least bit we will need to carry
+        cpu->update_flags([new_value] { return new_value & 0x1; }, emulator::carry);
+
+        new_value >>= 1;
+
+        cpu->set_accumulator(new_value);
+    }
+    else
+    {
+        auto address = cpu->address_to_arguemnts();
+        new_value = cpu->read8(address);
+        if (cpu->status() & emulator::carry)
+        {
+            new_value |= 0x100;
+        }
+
+        // If we are about to shift the least bit we will need to carry
+        cpu->update_flags([new_value] { return new_value & 0x1; }, emulator::carry);
+
+        new_value >>= 1;
+
+        cpu->write8(address, new_value);
+    }
+
+
+    update_zero_sign(cpu, new_value);
 }
 
 // RTI Return from Interrupt
 void emulator::rti(CPU* cpu)
 {
+    auto flags = cpu->pop();
+    cpu->add_flags(flags);
+    auto new_pc = cpu->pop();
+    new_pc |= cpu->pop() << 8;
+    cpu->set_program_counter(new_pc);
 }
 
 // RTS Return from Subroutine
 void emulator::rts(CPU* cpu)
 {
+    auto new_pc = cpu->pop();
+    new_pc += (cpu->pop() << 8) + 1;
+    cpu->set_program_counter(new_pc);
 }
 
 // SBC Subtract Memory from Accumulator with Borrow
 void emulator::sbc(CPU* cpu)
 {
+    auto a     = cpu->accumulator();
+    auto mem   = cpu->read8(cpu->address_to_arguemnts());
+    auto carry = !!(cpu->status() & emulator::carry);
+    uint16_t new_value = a - mem - carry;
+
+    update_zero_sign(cpu, new_value);
+    update_overflow(cpu, a, mem, new_value);
+    if (cpu->status() & emulator::decimal)
+    {
+        // TODO BCD
+    }
+
+    cpu->update_flags([new_value] { return new_value > 0x100; }, emulator::carry);
+    cpu->set_accumulator(new_value & 0xFF);
 }
 
 // SEC Set Carry Flag
@@ -467,46 +588,70 @@ void emulator::sei(CPU* cpu)
 // STA Store Accumulator in Memory
 void emulator::sta(CPU* cpu)
 {
+    auto address = cpu->address_to_arguemnts();
+    cpu->write8(address, cpu->accumulator());
 }
 
 // STX Store Index X in Memory
 void emulator::stx(CPU* cpu)
 {
+    auto address = cpu->address_to_arguemnts();
+    cpu->write8(address, cpu->x_register());
 }
 
 // STY Store Index Y in Memory
 void emulator::sty(CPU* cpu)
 {
+    auto address = cpu->address_to_arguemnts();
+    cpu->write8(address, cpu->y_register());
 }
 
 // TAX Transfer Accumulator to Index X
 void emulator::tax(CPU* cpu)
 {
+    auto a = cpu->accumulator();
+    cpu->set_x_register(a);
+    update_zero_sign(cpu, a);
 }
 
 // TAY Transfer Accumulator to Index Y
 void emulator::tay(CPU* cpu)
 {
+    auto a = cpu->accumulator();
+    cpu->set_y_register(a);
+    update_zero_sign(cpu, a);
 }
 
 // TSX Transfer Stack Pointer to Index X
 void emulator::tsx(CPU* cpu)
 {
+    auto s = cpu->stack();
+    cpu->set_x_register(s);
+    update_zero_sign(cpu, s);
 }
 
 // TXA Transfer Index X to Accumulator
 void emulator::txa(CPU* cpu)
 {
+    auto x = cpu->x_register();
+    cpu->set_accumulator(x);
+    update_zero_sign(cpu, x);
 }
 
 // TXS Transfer Index X to Stack Pointer
 void emulator::txs(CPU* cpu)
 {
+    auto x = cpu->x_register();
+    cpu->set_stack(x);
+    update_zero_sign(cpu, x);
 }
 
 // TYA Transfer Index Y to Accumulator
 void emulator::tya(CPU* cpu)
 {
+    auto y = cpu->y_register();
+    cpu->set_accumulator(y);
+    update_zero_sign(cpu, y);
 }
 
 // Unoffical opcodes V

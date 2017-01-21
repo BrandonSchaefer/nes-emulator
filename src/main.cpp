@@ -69,7 +69,7 @@ int main()
 {
     emulator::CPU cpu;
 
-    auto raw_rom = read_in_file("rom.nes");
+    auto raw_rom = read_in_file("../super_mario.nes");
     uint32_t current_byte = 0x10;
 
     if (raw_rom.size() < 0xF)

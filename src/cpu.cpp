@@ -122,6 +122,11 @@ uint8_t emulator::CPU::y_register() const
     return y_register_;
 }
 
+uint8_t emulator::CPU::stack() const
+{
+    return stack_;
+}
+
 uint16_t emulator::CPU::address_to_arguemnts() const
 {
     auto op   = read8(program_counter_);
@@ -146,7 +151,7 @@ uint16_t emulator::CPU::address_to_arguemnts() const
         case OpMode::accumulator:
             break;
         case OpMode::immediate:
-            break;
+            return program_counter_ + 1;
         case OpMode::zero_page:
             break;
         case OpMode::absolute:
@@ -166,19 +171,24 @@ void emulator::CPU::set_program_counter(uint16_t address)
     program_counter_ = address;
 }
 
-void emulator::CPU::set_accumulator(uint8_t value)
+void emulator::CPU::set_accumulator(uint8_t a)
 {
-    accumulator_ = value;
+    accumulator_ = a;
 }
 
-void emulator::CPU::set_x_register(uint8_t value)
+void emulator::CPU::set_x_register(uint8_t x)
 {
-    x_register_ = value;
+    x_register_ = x;
 }
 
-void emulator::CPU::set_y_register(uint8_t value)
+void emulator::CPU::set_y_register(uint8_t y)
 {
-    y_register_ = value;
+    y_register_ = y;
+}
+
+void emulator::CPU::set_stack(uint8_t sp)
+{
+    stack_ = sp;
 }
 
 uint8_t emulator::CPU::status() const
@@ -198,12 +208,12 @@ void emulator::CPU::update_flags(std::function<bool()> const& f, CPUFlag flags)
     }
 }
 
-void emulator::CPU::add_flags(CPUFlag flags)
+void emulator::CPU::add_flags(uint8_t flags)
 {
     status_ |= flags;
 }
 
-void emulator::CPU::remove_flags(CPUFlag flags)
+void emulator::CPU::remove_flags(uint8_t flags)
 {
     status_ &= ~flags;
 }
@@ -272,14 +282,24 @@ void emulator::CPU::write8(uint16_t address, uint8_t value)
 
 void emulator::CPU::push(uint8_t byte)
 {
-    stack_++;
-    write8(stack_, byte);
+    write8(++stack_, byte);
 }
 
 uint8_t emulator::CPU::pop()
 {
-    stack_--;
-    return read8(stack_);
+    return read8(stack_--);
+}
+
+uint8_t emulator::CPU::step()
+{
+    auto op = instruction[read8(program_counter_)];
+
+    // TODO CHECK MODE AND DO THINGS WITH THIS!
+    op.func(this);
+
+    print_instruction();
+
+    return op.number_cycles;
 }
 
 void emulator::CPU::print_instruction() const
