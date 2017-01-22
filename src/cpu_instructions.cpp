@@ -185,7 +185,7 @@ void emulator::bpl(CPU* cpu)
 // BRK Force Break
 void emulator::brk(CPU* cpu)
 {
-    auto pc = cpu->program_counter() + 1;
+    auto pc = cpu->program_counter() + 2;
     cpu->push(pc >> 8 & 0xFF);
     cpu->push(pc & 0xFF);
     cpu->add_flags(emulator::brk_inter);

@@ -350,7 +350,7 @@ uint8_t emulator::CPU::step()
 
     op.func(this);
 
-    // No one moved the pc, so lets move up ourselfs
+    // No op moved the pc, so lets move up ourselfs
     if (pc == program_counter_)
     {
         program_counter_ += op.number_bytes;

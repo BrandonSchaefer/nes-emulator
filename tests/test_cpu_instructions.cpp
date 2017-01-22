@@ -57,10 +57,6 @@ struct TestCPUInstructions : ::testing::Test
 }
 
 /*
-void emulator::brk(CPU* cpu)
-void emulator::jsr(CPU* cpu)
-void emulator::rti(CPU* cpu)
-void emulator::rts(CPU* cpu)
 */
 
 TEST_F(TestCPUInstructions, test_adc)
@@ -708,6 +704,46 @@ TEST_F(TestCPUInstructions, test_dey)
     emulator::dey(&cpu);
 
     EXPECT_EQ(cpu.y_register(), default_y - 1);
+}
+
+TEST_F(TestCPUInstructions, test_jsr)
+{
+    // op code JSR - absolute
+    cpu.write8(default_pc, 0x20);
+    cpu.write8(default_pc + 1, default_pc + 20);
+
+    emulator::jsr(&cpu);
+
+    EXPECT_EQ(cpu.program_counter(), default_pc + 20);
+}
+
+TEST_F(TestCPUInstructions, test_rts_from_jsr)
+{
+    // op code JSR - absolute
+    cpu.write8(default_pc, 0x20);
+    cpu.write8(default_pc + 1, default_pc + 20);
+
+    // op code RTS - implicit
+    cpu.write8(default_pc + 20, 0x60);
+
+    emulator::jsr(&cpu);
+
+    EXPECT_EQ(cpu.program_counter(), default_pc + 20);
+
+    emulator::rts(&cpu);
+
+    // We'll move past JSR, which is 3 bytes to the next op code
+    EXPECT_EQ(cpu.program_counter(), default_pc + 3);
+}
+
+TEST_F(TestCPUInstructions, DISABLED_test_brk)
+{
+    // TODO Test this
+}
+
+TEST_F(TestCPUInstructions, DISABLED_test_rti)
+{
+    // TODO Need to do interrupts
 }
 
 TEST_F(TestCPUInstructions, test_cpu_step_adc_immediate)
