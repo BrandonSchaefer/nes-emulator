@@ -253,6 +253,41 @@ void emulator::CPU::remove_flags(uint8_t flags)
     status_ &= ~flags;
 }
 
+bool emulator::CPU::carry() const
+{
+    return status_ & emulator::carry;
+}
+
+bool emulator::CPU::zero() const
+{
+    return status_ & emulator::zero;
+}
+
+bool emulator::CPU::interrupt() const
+{
+    return status_ & emulator::interrupt;
+}
+
+bool emulator::CPU::decimal() const
+{
+    return status_ & emulator::decimal;
+}
+
+bool emulator::CPU::break_interrupt() const
+{
+    return status_ & emulator::brk_inter;
+}
+
+bool emulator::CPU::overflow() const
+{
+    return status_ & emulator::overflow;
+}
+
+bool emulator::CPU::sign() const
+{
+    return status_ & emulator::sign;
+}
+
 emulator::OpMode emulator::CPU::current_mode() const
 {
     auto op = read8(program_counter_);
@@ -391,12 +426,12 @@ void emulator::CPU::print_instruction() const
     std::cout << std::endl;
 
     std::cout << std::hex
-              << " C 0x" << (status_ & carry)
-              << " Z 0x" << (status_ & zero)
-              << " I 0x" << (status_ & interrupt)
-              << " D 0x" << (status_ & decimal)
-              << " B 0x" << (status_ & brk_inter)
-              << " V 0x" << (status_ & overflow)
-              << " Z 0x" << (status_ & sign)
+              << " C 0x" << (status_ & emulator::carry)
+              << " Z 0x" << (status_ & emulator::zero)
+              << " I 0x" << (status_ & emulator::interrupt)
+              << " D 0x" << (status_ & emulator::decimal)
+              << " B 0x" << (status_ & emulator::brk_inter)
+              << " V 0x" << (status_ & emulator::overflow)
+              << " Z 0x" << (status_ & emulator::sign)
               << std::endl;
 }

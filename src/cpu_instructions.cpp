@@ -72,14 +72,14 @@ void branch_if_cond(std::function<bool()> const& f, emulator::CPU* cpu)
 // ADC Add Memory to Accumulator with Carry
 void emulator::adc(CPU* cpu)
 {
-    auto a    = cpu->accumulator();
-    auto mem  = cpu->read8(cpu->address_to_arguemnts());
-    uint8_t c = !!(cpu->status() & carry);
+    auto a            = cpu->accumulator();
+    auto mem          = cpu->read8(cpu->address_to_arguemnts());
+    uint8_t c         = cpu->carry();
     uint8_t new_value = a + mem + c;
 
     update_zero(cpu, new_value);
 
-    if (cpu->status() & decimal)
+    if (cpu->decimal())
     {
         // TODO BCD
     }
@@ -102,8 +102,8 @@ void emulator::adc(CPU* cpu)
 // AND "AND" Memory with Accumulator
 void emulator::nd(CPU* cpu)
 {
-    auto a = cpu->accumulator();
-    auto mem = cpu->read8(cpu->address_to_arguemnts());
+    auto a         = cpu->accumulator();
+    auto mem       = cpu->read8(cpu->address_to_arguemnts());
     auto new_value = a & mem;
     cpu->set_accumulator(new_value);
 
@@ -113,7 +113,7 @@ void emulator::nd(CPU* cpu)
 // ASL Shift Left One Bit (Memory or Accumulator)
 void emulator::asl(CPU* cpu)
 {
-    auto current_mode = cpu->current_mode();
+    auto current_mode  = cpu->current_mode();
     uint16_t new_value = 0;
 
     if (current_mode == emulator::accumulator)
@@ -124,7 +124,7 @@ void emulator::asl(CPU* cpu)
     else
     {
         auto address = cpu->address_to_arguemnts();
-        new_value = cpu->read8(address) << 1;
+        new_value    = cpu->read8(address) << 1;
         cpu->write8(address, new_value);
     }
 
@@ -134,26 +134,26 @@ void emulator::asl(CPU* cpu)
 // BCC Branch on Carry Clear
 void emulator::bcc(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return (cpu->status() & emulator::carry) == 0; }, cpu);
+    branch_if_cond([cpu]{ return (cpu->carry()) == 0; }, cpu);
 }
 
 // BCS Branch on Carry Set
 void emulator::bcs(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return cpu->status() & emulator::carry; }, cpu);
+    branch_if_cond([cpu]{ return cpu->carry(); }, cpu);
 }
 
 // BEQ Branch on Result Zero
 void emulator::beq(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return cpu->status() & emulator::zero; }, cpu);
+    branch_if_cond([cpu]{ return cpu->zero(); }, cpu);
 }
 
 // BIT Test Bits in Memory with Accumulator
 void emulator::bit(CPU* cpu)
 {
     auto address = cpu->address_to_arguemnts();
-    auto mem = cpu->read8(address);
+    auto mem     = cpu->read8(address);
 
     cpu->update_flags([mem] {
         return (mem >> 6) & 1;
@@ -166,20 +166,20 @@ void emulator::bit(CPU* cpu)
 // BMI Branch on Result Minus
 void emulator::bmi(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return cpu->status() & emulator::sign; }, cpu);
+    branch_if_cond([cpu]{ return cpu->sign(); }, cpu);
 }
 
 // BNE Branch on Result not Zero
 void emulator::bne(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return (cpu->status() & emulator::zero) == 0; }, cpu);
+    branch_if_cond([cpu]{ return (cpu->zero()) == 0; }, cpu);
 
 }
 
 // BPL Branch on Result Plus
 void emulator::bpl(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return (cpu->status() & emulator::sign) == 0; }, cpu);
+    branch_if_cond([cpu]{ return (cpu->sign()) == 0; }, cpu);
 }
 
 // BRK Force Break
@@ -197,13 +197,13 @@ void emulator::brk(CPU* cpu)
 // BVC Branch on Overflow Clear
 void emulator::bvc(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return (cpu->status() & emulator::overflow) == 0; }, cpu);
+    branch_if_cond([cpu]{ return (cpu->overflow()) == 0; }, cpu);
 }
 
 // BVS Branch on Overflow Set
 void emulator::bvs(CPU* cpu)
 {
-    branch_if_cond([cpu]{ return cpu->status() & emulator::overflow; }, cpu);
+    branch_if_cond([cpu]{ return cpu->overflow(); }, cpu);
 }
 
 // CLC Clear Carry Flag
@@ -234,7 +234,7 @@ void emulator::clv(CPU* cpu)
 void emulator::cmp(CPU* cpu)
 {
     auto mem = cpu->read8(cpu->address_to_arguemnts());
-    mem = cpu->accumulator() - mem;
+    mem      = cpu->accumulator() - mem;
     update_carry(cpu, mem);
     update_zero_sign(cpu, mem);
 }
@@ -243,7 +243,7 @@ void emulator::cmp(CPU* cpu)
 void emulator::cpx(CPU* cpu)
 {
     auto mem = cpu->read8(cpu->address_to_arguemnts());
-    mem = cpu->x_register() - mem;
+    mem      = cpu->x_register() - mem;
     update_carry(cpu, mem);
     update_zero_sign(cpu, mem);
 }
@@ -252,7 +252,7 @@ void emulator::cpx(CPU* cpu)
 void emulator::cpy(CPU* cpu)
 {
     auto mem = cpu->read8(cpu->address_to_arguemnts());
-    mem = cpu->y_register() - mem;
+    mem      = cpu->y_register() - mem;
     update_carry(cpu, mem);
     update_zero_sign(cpu, mem);
 }
@@ -261,7 +261,7 @@ void emulator::cpy(CPU* cpu)
 void emulator::dec(CPU* cpu)
 {
     auto address = cpu->address_to_arguemnts();
-    auto mem = cpu->read8(address);
+    auto mem     = cpu->read8(address);
     mem = (mem - 1) & 0xFF;
     update_zero_sign(cpu, mem);
     cpu->write8(address, mem);
@@ -287,7 +287,7 @@ void emulator::dey(CPU* cpu)
 void emulator::eor(CPU* cpu)
 {
     auto address = cpu->address_to_arguemnts();
-    auto mem = cpu->read8(address);
+    auto mem     = cpu->read8(address);
     cpu->set_accumulator(mem ^ cpu->accumulator());
 }
 
@@ -295,7 +295,7 @@ void emulator::eor(CPU* cpu)
 void emulator::inc(CPU* cpu)
 {
     auto address = cpu->address_to_arguemnts();
-    auto mem = cpu->read8(address);
+    auto mem     = cpu->read8(address);
     cpu->write8(address, (mem + 1) & 0xFF);
     update_zero_sign(cpu, mem);
 }
@@ -373,7 +373,7 @@ void emulator::lsr(CPU* cpu)
     else
     {
         auto address = cpu->address_to_arguemnts();
-        new_value = cpu->read8(address) >> 1;
+        new_value    = cpu->read8(address) >> 1;
         cpu->write8(address, new_value);
     }
 
@@ -429,7 +429,7 @@ void emulator::rol(CPU* cpu)
     if (current_mode == emulator::accumulator)
     {
         new_value = cpu->accumulator() << 1;
-        if (cpu->status() & emulator::carry)
+        if (cpu->carry())
         {
             new_value |= 0x1;
         }
@@ -440,7 +440,7 @@ void emulator::rol(CPU* cpu)
     {
         auto address = cpu->address_to_arguemnts();
         new_value = cpu->read8(address) << 1;
-        if (cpu->status() & emulator::carry)
+        if (cpu->carry())
         {
             new_value |= 0x1;
         }
@@ -455,13 +455,13 @@ void emulator::rol(CPU* cpu)
 // ROR Rotate One Bit Right (Memory or Accumulator)
 void emulator::ror(CPU* cpu)
 {
-    auto current_mode = cpu->current_mode();
+    auto current_mode  = cpu->current_mode();
     uint16_t new_value = 0;
 
     if (current_mode == emulator::accumulator)
     {
         new_value = cpu->accumulator();
-        if (cpu->status() & emulator::carry)
+        if (cpu->carry())
         {
             new_value |= 0x100;
         }
@@ -476,8 +476,8 @@ void emulator::ror(CPU* cpu)
     else
     {
         auto address = cpu->address_to_arguemnts();
-        new_value = cpu->read8(address);
-        if (cpu->status() & emulator::carry)
+        new_value    = cpu->read8(address);
+        if (cpu->carry())
         {
             new_value |= 0x100;
         }
@@ -515,14 +515,14 @@ void emulator::rts(CPU* cpu)
 // SBC Subtract Memory from Accumulator with Borrow
 void emulator::sbc(CPU* cpu)
 {
-    auto a     = cpu->accumulator();
-    auto mem   = cpu->read8(cpu->address_to_arguemnts());
-    auto carry = !!(cpu->status() & emulator::carry);
+    auto a             = cpu->accumulator();
+    auto mem           = cpu->read8(cpu->address_to_arguemnts());
+    auto carry         = cpu->carry();
     uint16_t new_value = a - mem - carry;
 
     update_zero_sign(cpu, new_value);
     update_overflow(cpu, a, mem, new_value);
-    if (cpu->status() & emulator::decimal)
+    if (cpu->decimal())
     {
         // TODO BCD
     }

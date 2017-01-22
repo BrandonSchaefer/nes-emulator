@@ -232,7 +232,7 @@ TEST_F(TestCPUInstructions, test_clc)
 
     emulator::clc(&cpu);
 
-    EXPECT_FALSE(cpu.status() & emulator::carry);
+    EXPECT_FALSE(cpu.carry());
 }
 
 TEST_F(TestCPUInstructions, test_cld)
@@ -241,7 +241,7 @@ TEST_F(TestCPUInstructions, test_cld)
 
     emulator::cld(&cpu);
 
-    EXPECT_FALSE(cpu.status() & emulator::decimal);
+    EXPECT_FALSE(cpu.decimal());
 }
 
 TEST_F(TestCPUInstructions, test_cli)
@@ -250,7 +250,7 @@ TEST_F(TestCPUInstructions, test_cli)
 
     emulator::cli(&cpu);
 
-    EXPECT_FALSE(cpu.status() & emulator::interrupt);
+    EXPECT_FALSE(cpu.interrupt());
 
 }
 
@@ -260,7 +260,7 @@ TEST_F(TestCPUInstructions, test_clv)
 
     emulator::clv(&cpu);
 
-    EXPECT_FALSE(cpu.status() & emulator::overflow);
+    EXPECT_FALSE(cpu.overflow());
 
 }
 
@@ -268,21 +268,21 @@ TEST_F(TestCPUInstructions, test_sec)
 {
     emulator::sec(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::carry);
+    EXPECT_TRUE(cpu.carry());
 }
 
 TEST_F(TestCPUInstructions, test_sed)
 {
     emulator::sed(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::decimal);
+    EXPECT_TRUE(cpu.decimal());
 }
 
 TEST_F(TestCPUInstructions, test_sei)
 {
     emulator::sei(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::interrupt);
+    EXPECT_TRUE(cpu.interrupt());
 }
 
 TEST_F(TestCPUInstructions, test_sta)
@@ -469,7 +469,7 @@ TEST_F(TestCPUInstructions, test_cmp)
 
     emulator::cmp(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::zero);
+    EXPECT_TRUE(cpu.zero());
 }
 
 TEST_F(TestCPUInstructions, test_cpx)
@@ -480,7 +480,7 @@ TEST_F(TestCPUInstructions, test_cpx)
 
     emulator::cpx(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::zero);
+    EXPECT_TRUE(cpu.zero());
 }
 
 TEST_F(TestCPUInstructions, test_cpy)
@@ -491,7 +491,7 @@ TEST_F(TestCPUInstructions, test_cpy)
 
     emulator::cpy(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::zero);
+    EXPECT_TRUE(cpu.zero());
 }
 
 TEST_F(TestCPUInstructions, test_inc)
@@ -653,8 +653,8 @@ TEST_F(TestCPUInstructions, test_bit)
 
     emulator::bit(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::sign);
-    EXPECT_TRUE(cpu.status() & emulator::overflow);
+    EXPECT_TRUE(cpu.sign());
+    EXPECT_TRUE(cpu.overflow());
 }
 
 TEST_F(TestCPUInstructions, test_bit_zero)
@@ -666,7 +666,7 @@ TEST_F(TestCPUInstructions, test_bit_zero)
 
     emulator::bit(&cpu);
 
-    EXPECT_TRUE(cpu.status() & emulator::zero);
+    EXPECT_TRUE(cpu.zero());
 }
 
 TEST_F(TestCPUInstructions, test_dec)

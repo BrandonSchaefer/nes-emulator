@@ -128,6 +128,14 @@ public:
     void add_flags(uint8_t flags);
     void remove_flags(uint8_t flags);
 
+    bool carry() const;
+    bool zero() const;
+    bool interrupt() const;
+    bool decimal() const;
+    bool break_interrupt() const;
+    bool overflow() const;
+    bool sign() const;
+
     OpMode current_mode() const;
 
     void push(uint8_t byte);
