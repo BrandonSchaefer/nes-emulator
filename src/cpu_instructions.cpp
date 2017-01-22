@@ -57,6 +57,16 @@ void update_carry(emulator::CPU* cpu, uint32_t value)
     cpu->update_flags([value] { return value > 0xFF; }, emulator::carry);
 }
 
+void branch_if_cond(std::function<bool()> const& f, emulator::CPU* cpu)
+{
+    if (f())
+    {
+        auto address = cpu->address_to_arguemnts();
+        cpu->set_program_counter(address);
+        cpu->add_branch_cycle(address);
+    }
+}
+
 }
 
 // ADC Add Memory to Accumulator with Carry
@@ -69,11 +79,11 @@ void emulator::adc(CPU* cpu)
 
     update_zero(cpu, new_value);
 
-    //if (cpu->status() & decimal)
+    if (cpu->status() & decimal)
     {
         // TODO BCD
     }
-    //else
+    else
     {
         update_sign(cpu, new_value);
         update_overflow(cpu, a, mem, new_value);
@@ -126,34 +136,19 @@ void emulator::asl(CPU* cpu)
 // BCC Branch on Carry Clear
 void emulator::bcc(CPU* cpu)
 {
-    if ((cpu->status() & emulator::carry) == 0)
-    {
-        auto address = cpu->address_to_arguemnts();
-        // TODO Upate cycle?
-        cpu->set_program_counter(address);
-    }
+    branch_if_cond([cpu]{ return (cpu->status() & emulator::carry) == 0; }, cpu);
 }
 
 // BCS Branch on Carry Set
 void emulator::bcs(CPU* cpu)
 {
-    if (cpu->status() & emulator::carry)
-    {
-        auto address = cpu->address_to_arguemnts();
-        // TODO Upate cycle?
-        cpu->set_program_counter(address);
-    }
+    branch_if_cond([cpu]{ return cpu->status() & emulator::carry; }, cpu);
 }
 
 // BEQ Branch on Result Zero
 void emulator::beq(CPU* cpu)
 {
-    if (cpu->status() & emulator::zero)
-    {
-        auto address = cpu->address_to_arguemnts();
-        // TODO Upate cycle?
-        cpu->set_program_counter(address);
-    }
+    branch_if_cond([cpu]{ return cpu->status() & emulator::zero; }, cpu);
 }
 
 // BIT Test Bits in Memory with Accumulator
@@ -173,38 +168,20 @@ void emulator::bit(CPU* cpu)
 // BMI Branch on Result Minus
 void emulator::bmi(CPU* cpu)
 {
-    if (cpu->status() & emulator::sign)
-    {
-        auto address = cpu->address_to_arguemnts();
-        cpu->set_program_counter(address);
-        // TODO Upate cycle?
-        // Branch
-    }
+    branch_if_cond([cpu]{ return cpu->status() & emulator::sign; }, cpu);
 }
 
 // BNE Branch on Result not Zero
 void emulator::bne(CPU* cpu)
 {
-    if ((cpu->status() & emulator::zero) == 0)
-    {
-        auto address = cpu->address_to_arguemnts();
-        cpu->set_program_counter(address);
-        // TODO Upate cycle?
-        // Branch
-    }
+    branch_if_cond([cpu]{ return (cpu->status() & emulator::zero) == 0; }, cpu);
 
 }
 
 // BPL Branch on Result Plus
 void emulator::bpl(CPU* cpu)
 {
-    if ((cpu->status() & emulator::sign) == 0)
-    {
-        auto address = cpu->address_to_arguemnts();
-        cpu->set_program_counter(address);
-        // TODO Upate cycle?
-        // Branch
-    }
+    branch_if_cond([cpu]{ return (cpu->status() & emulator::sign) == 0; }, cpu);
 }
 
 // BRK Force Break
@@ -222,25 +199,13 @@ void emulator::brk(CPU* cpu)
 // BVC Branch on Overflow Clear
 void emulator::bvc(CPU* cpu)
 {
-    if ((cpu->status() & emulator::overflow) == 0)
-    {
-        auto address = cpu->address_to_arguemnts();
-        cpu->set_program_counter(address);
-        // TODO Upate cycle?
-        // Branch
-    }
+    branch_if_cond([cpu]{ return (cpu->status() & emulator::overflow) == 0; }, cpu);
 }
 
 // BVS Branch on Overflow Set
 void emulator::bvs(CPU* cpu)
 {
-    if (cpu->status() & emulator::overflow)
-    {
-        auto address = cpu->address_to_arguemnts();
-        cpu->set_program_counter(address);
-        // TODO Upate cycle?
-        // Branch
-    }
+    branch_if_cond([cpu]{ return cpu->status() & emulator::overflow; }, cpu);
 }
 
 // CLC Clear Carry Flag
@@ -654,7 +619,7 @@ void emulator::tya(CPU* cpu)
     update_zero_sign(cpu, y);
 }
 
-// Unoffical opcodes V
+// Unoffical opcodes
 void emulator::ahx(CPU* /*cpu*/)
 {
 }

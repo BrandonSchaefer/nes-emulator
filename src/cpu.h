@@ -124,7 +124,7 @@ public:
     void set_stack(uint8_t sp);
 
     uint8_t status() const;
-    void update_flags(std::function<bool()> const& f, CPUFlag flags);
+    void update_flags(std::function<bool()> const& f, uint8_t flags);
     void add_flags(uint8_t flags);
     void remove_flags(uint8_t flags);
 
@@ -133,7 +133,9 @@ public:
     void push(uint8_t byte);
     uint8_t pop();
 
-    // return cycles?
+    virtual void add_branch_cycle(uint16_t address);
+    bool is_page_crossed(uint16_t a, uint16_t b) const;
+
     uint8_t step();
 
     void print_instruction() const;
@@ -145,6 +147,7 @@ private:
     uint8_t y_register_{0};
     uint8_t stack_{0};
     uint8_t status_{0};
+    uint8_t cycles_{0};
 
     std::array<uint8_t, 65536> memory;
 };

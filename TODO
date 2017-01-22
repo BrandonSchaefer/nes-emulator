@@ -1,9 +1,21 @@
 Emulator:
-    CPU - Missing Branches/Modes
-    PPU - Missing everything!
-    APU - Missing everything!
-    Mappers - Missing everything!
-    iNES - Done
+    CPU
+        Modes
+        Interrupts
+        Cycles inc when page crossed for modes
+
+    PPU
+        Missing everything!
+
+    APU
+        Missing everything!
+
+    Mappers
+        Missing everything!
+
+    iNES
+        Tests
+        Done (should be!)
 
 UI:
     Rendering the ppu

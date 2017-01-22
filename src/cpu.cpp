@@ -98,7 +98,7 @@ emulator::CPU::CPU()
 void emulator::CPU::reset()
 {
     program_counter_ = read16(0xFFFC);
-    stack_ = 0xFD;
+    stack_  = 0xFD;
     status_ = 0x24;
 }
 
@@ -211,7 +211,7 @@ uint8_t emulator::CPU::status() const
     return status_;
 }
 
-void emulator::CPU::update_flags(std::function<bool()> const& f, CPUFlag flags)
+void emulator::CPU::update_flags(std::function<bool()> const& f, uint8_t flags)
 {
     if (f())
     {
@@ -297,24 +297,43 @@ void emulator::CPU::write8(uint16_t address, uint8_t value)
 
 void emulator::CPU::push(uint8_t byte)
 {
-    write8(++stack_, byte);
+    write8(stack_--, byte);
 }
 
 uint8_t emulator::CPU::pop()
 {
-    return read8(stack_--);
+    return read8(++stack_);
+}
+
+void emulator::CPU::add_branch_cycle(uint16_t address)
+{
+    cycles_++;
+    if (is_page_crossed(program_counter_, address))
+    {
+        cycles_++;
+    }
+}
+
+bool emulator::CPU::is_page_crossed(uint16_t a, uint16_t b) const
+{
+    // Check if we are on different pages, each are 256 bytes
+    return (a & 0xFF00) != (b & 0xFF00);
 }
 
 uint8_t emulator::CPU::step()
 {
     auto op = instruction[read8(program_counter_)];
+    cycles_ = op.number_cycles;
 
-    // TODO CHECK MODE AND DO THINGS WITH THIS!
     op.func(this);
 
     print_instruction();
 
-    return op.number_cycles;
+    program_counter_ += op.number_bytes;
+
+    // TODO Depending on the mode we may jump a page boundary, need to check
+    // if we need to increment the cycle
+    return cycles_;
 }
 
 void emulator::CPU::print_instruction() const
@@ -323,15 +342,20 @@ void emulator::CPU::print_instruction() const
     auto info = instruction[op];
     std::string mode_str = mode_name(static_cast<OpMode>(info.mode));
 
+    std::cout << "PC: " << std::hex << "0x" << program_counter_ << " "
+              << "A: 0x" << (int)accumulator_ << " "
+              << "X: 0x" << (int)x_register_ << " "
+              << "Y: 0x" << (int)y_register_ << std::endl;
+
     std::cout << mode_str << " " << info.name
         << "(0x" << std::hex << (int)op << std::dec << ")";
 
-    if (info.number_args > 1)
+    if (info.number_bytes > 1)
     {
         auto a1 = read8(program_counter_ + 1);
         std::cout << " " << std::hex << "0x" << (int)a1 << " ";
 
-        if (info.number_args > 2)
+        if (info.number_bytes > 2)
         {
             auto a2 = read8(program_counter_ + 2);
             std::cout << std::hex << "0x" << (int)a2 << " ";

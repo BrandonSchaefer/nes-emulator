@@ -112,7 +112,7 @@ int main()
         std::cerr << "Assumption on file size. We to many or to few bytes in the *.nes file!" << std::endl;
     }
 
-    std::vector<uint8_t> prg(raw_rom.data(), raw_rom.data() + current_byte + prg_byte_size);
+    std::vector<uint8_t> prg(raw_rom.data() + current_byte, raw_rom.data() + current_byte + prg_byte_size);
     current_byte += prg_byte_size;
 
     std::vector<uint8_t> chr(raw_rom.data() + current_byte, raw_rom.data() + current_byte + chr_byte_size);

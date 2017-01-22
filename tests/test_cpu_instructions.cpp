@@ -36,6 +36,11 @@ uint8_t const default_x{0x56};
 uint8_t const default_y{0xF0};
 uint8_t const default_sp{0x0F};
 
+struct MockCPU : emulator::CPU
+{
+    MOCK_METHOD1(add_branch_cycle, void(uint16_t address));
+};
+
 struct TestCPUInstructions : ::testing::Test
 {
     void SetUp() override
@@ -47,28 +52,15 @@ struct TestCPUInstructions : ::testing::Test
         cpu.set_stack(default_sp);
     }
 
-    emulator::CPU cpu;
+    MockCPU cpu;
 };
 }
+
 /*
-void emulator::bcc(CPU* cpu)
-void emulator::bcs(CPU* cpu)
-void emulator::beq(CPU* cpu)
-void emulator::bit(CPU* cpu)
-void emulator::bmi(CPU* cpu)
-void emulator::bne(CPU* cpu)
-void emulator::bpl(CPU* cpu)
 void emulator::brk(CPU* cpu)
-void emulator::bvc(CPU* cpu)
-void emulator::bvs(CPU* cpu)
-void emulator::dec(CPU* cpu)
-void emulator::dex(CPU* cpu)
-void emulator::dey(CPU* cpu)
-void emulator::eor(CPU* cpu)
 void emulator::jsr(CPU* cpu)
 void emulator::rti(CPU* cpu)
 void emulator::rts(CPU* cpu)
-void emulator::sbc(CPU* cpu)
 */
 
 TEST_F(TestCPUInstructions, test_adc)
@@ -541,6 +533,181 @@ TEST_F(TestCPUInstructions, test_jmp)
     emulator::jmp(&cpu);
 
     EXPECT_EQ(cpu.program_counter(), default_pc + 3);
+}
+
+TEST_F(TestCPUInstructions, test_bcc)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bcc(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bcs)
+{
+    using namespace ::testing;
+
+    cpu.add_flags(emulator::carry);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bcs(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_beq)
+{
+    using namespace ::testing;
+
+    cpu.add_flags(emulator::zero);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::beq(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bmi)
+{
+    using namespace ::testing;
+
+    cpu.add_flags(emulator::sign);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bmi(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bne)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bne(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bpl)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bpl(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bvc)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bvc(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_bvs)
+{
+    using namespace ::testing;
+
+    cpu.add_flags(emulator::overflow);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bvs(&cpu);
+}
+
+TEST_F(TestCPUInstructions, test_sbc)
+{
+    // op code SBC - immediate 
+    cpu.write8(default_pc, 0xE9);
+    cpu.write8(default_pc + 1, default_acc - 1);
+
+    emulator::sbc(&cpu);
+
+    EXPECT_EQ(cpu.accumulator(), default_acc - default_acc + 1);
+}
+
+TEST_F(TestCPUInstructions, test_sbc_carry)
+{
+    // op code SBC - immediate 
+    cpu.write8(default_pc, 0xE9);
+    cpu.write8(default_pc + 1, default_acc - 1);
+
+    cpu.add_flags(emulator::carry);
+
+    emulator::sbc(&cpu);
+
+    // Carry will add an extra -1
+    EXPECT_EQ(cpu.accumulator(), default_acc - default_acc);
+}
+
+TEST_F(TestCPUInstructions, test_bit)
+{
+    // op code SBC - immediate
+    cpu.write8(default_pc, 0x2C);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0xFF);
+
+    emulator::bit(&cpu);
+
+    EXPECT_TRUE(cpu.status() & emulator::sign);
+    EXPECT_TRUE(cpu.status() & emulator::overflow);
+}
+
+TEST_F(TestCPUInstructions, test_bit_zero)
+{
+    // op code SBC - immediate
+    cpu.write8(default_pc, 0x2C);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, 0x0);
+
+    emulator::bit(&cpu);
+
+    EXPECT_TRUE(cpu.status() & emulator::zero);
+}
+
+TEST_F(TestCPUInstructions, test_dec)
+{
+    // op code DEC - absolute
+    cpu.write8(default_pc, 0xCE);
+    cpu.write8(default_pc + 1, default_pc + 3);
+    cpu.write8(default_pc + 3, default_acc);
+
+    emulator::dec(&cpu);
+
+    EXPECT_EQ(cpu.read8(default_pc + 3), default_acc - 1);
+}
+
+TEST_F(TestCPUInstructions, test_eor)
+{
+    // op code EOR - immediate
+    cpu.write8(default_pc, 0x49);
+    cpu.write8(default_pc + 1, default_acc);
+
+    emulator::eor(&cpu);
+
+    EXPECT_EQ(cpu.accumulator(), 0x0);
+}
+
+TEST_F(TestCPUInstructions, test_dex)
+{
+    emulator::dex(&cpu);
+
+    EXPECT_EQ(cpu.x_register(), default_x - 1);
+}
+
+TEST_F(TestCPUInstructions, test_dey)
+{
+    emulator::dey(&cpu);
+
+    EXPECT_EQ(cpu.y_register(), default_y - 1);
 }
 
 TEST_F(TestCPUInstructions, test_cpu_step_adc_immediate)

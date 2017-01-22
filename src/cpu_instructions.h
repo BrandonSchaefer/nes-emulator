@@ -62,7 +62,7 @@ struct OpInfo
 {
     std::string name;
     OpMode mode;
-    uint8_t number_args;
+    uint8_t number_bytes;
     uint8_t number_cycles;
     uint8_t add_cycles_page_crossed;
     std::function<void(CPU* cpu)> func;
