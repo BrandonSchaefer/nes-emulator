@@ -96,8 +96,6 @@ void emulator::adc(CPU* cpu)
         update_carry(cpu, as_int32);
     }
 
-    printf("Yay %i + %i + %i = %i\n", a, mem, c, new_value);
-
     cpu->set_accumulator(new_value);
 }
 
@@ -328,8 +326,9 @@ void emulator::jmp(CPU* cpu)
 // JSR Jump to New Location Saving Return Address
 void emulator::jsr(CPU* cpu)
 {
-    auto pc = cpu->program_counter() - 1;
-    cpu->push(pc << 8 & 0xFF);
+    // Since JSR + args is 3 bytes, and we want to move to next op - 1
+    auto pc = cpu->program_counter() + 2;
+    cpu->push(pc >> 8 & 0xFF);
     cpu->push(pc & 0xFF);
     auto address = cpu->address_to_arguemnts();
     cpu->set_program_counter(address);
@@ -508,7 +507,7 @@ void emulator::rti(CPU* cpu)
 // RTS Return from Subroutine
 void emulator::rts(CPU* cpu)
 {
-    auto new_pc = cpu->pop();
+    uint16_t new_pc = cpu->pop();
     new_pc += (cpu->pop() << 8) + 1;
     cpu->set_program_counter(new_pc);
 }

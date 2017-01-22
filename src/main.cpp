@@ -127,5 +127,13 @@ int main()
               << "PrgBytes: " << prg.size() << std::endl
               << "ChrBytes: " << chr.size() << std::endl;
 
+    //std::copy(prg.begin(), prg.end(), cpu.memory.begin() + 0x8000);
+
+    for (auto i = 0u; i < 22; i++)
+    {
+        //printf("PC: %i\n", cpu.program_counter());
+        printf("%i\n", (int)cpu.step());
+    }
+
     return 0;
 }

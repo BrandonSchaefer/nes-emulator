@@ -76,8 +76,28 @@ emulator::CPU::CPU()
     reset();
 
     // TESTING
+    program_counter_ = 0x0600;
+    auto i = program_counter_;
+    memory[i] = 0x20;
+    memory[i + 1] = 0x09;
+    memory[i + 2] = 0x06;
+    memory[i + 3] = 0x20;
+    memory[i + 4] = 0x0c;
+    memory[i + 5] = 0x06;
+    memory[i + 6] = 0x20;
+    memory[i + 7] = 0x12;
+    memory[i + 8] = 0x06;
+    memory[i + 9] = 0xa2;
+    memory[i + 10] = 0x00;
+    memory[i + 11] = 0x60;
+    memory[i + 12] = 0xe8;
+    memory[i + 13] = 0xe0;
+    memory[i + 14] = 0x05;
+    memory[i + 15] = 0xd0;
+    memory[i + 16] = 0xfb;
+    memory[i + 17] = 0x60;
+    memory[i + 18] = 0x00;
     /*
-    program_counter_ = 0x0;
     memory[1] = 0x50;
     memory[2] = 0xFF;
 
@@ -165,7 +185,7 @@ uint16_t emulator::CPU::address_to_arguemnts() const
             uint16_t offset = read8(program_counter_ + 1);
 
             // Negative
-            if (offset & 0x100)
+            if (offset & 0x80)
             {
                 return program_counter_ + 2 + offset - 0x100;
             }
@@ -274,7 +294,7 @@ uint8_t emulator::CPU::read8(uint16_t address) const
 
 uint16_t emulator::CPU::read16(uint16_t address) const
 {
-    // TODO handle other type of memory... ram/ppu/apu
+    // TODO handle other type of memory... ram/ppu/apu?
     auto low  = read8(address);
     auto high = read8(address + 1);
 
@@ -322,14 +342,19 @@ bool emulator::CPU::is_page_crossed(uint16_t a, uint16_t b) const
 
 uint8_t emulator::CPU::step()
 {
-    auto op = instruction[read8(program_counter_)];
+    auto pc = program_counter_;
+    auto op = instruction[read8(pc)];
     cycles_ = op.number_cycles;
-
-    op.func(this);
 
     print_instruction();
 
-    program_counter_ += op.number_bytes;
+    op.func(this);
+
+    // No one moved the pc, so lets move up ourselfs
+    if (pc == program_counter_)
+    {
+        program_counter_ += op.number_bytes;
+    }
 
     // TODO Depending on the mode we may jump a page boundary, need to check
     // if we need to increment the cycle
@@ -345,7 +370,8 @@ void emulator::CPU::print_instruction() const
     std::cout << "PC: " << std::hex << "0x" << program_counter_ << " "
               << "A: 0x" << (int)accumulator_ << " "
               << "X: 0x" << (int)x_register_ << " "
-              << "Y: 0x" << (int)y_register_ << std::endl;
+              << "Y: 0x" << (int)y_register_ << " "
+              << "SP: 0x" << (int)stack_ << std::endl;
 
     std::cout << mode_str << " " << info.name
         << "(0x" << std::hex << (int)op << std::dec << ")";
