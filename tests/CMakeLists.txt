@@ -2,6 +2,7 @@ set (GTEST_BACKEND_SOURCE
    test_main.cpp
    test_cpu.cpp
    test_cpu_instructions.cpp
+   test_memory.cpp
 )
 
 include_directories (${NES_EMULATOR_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/src)

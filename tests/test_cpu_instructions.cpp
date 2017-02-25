@@ -1,7 +1,7 @@
 //-*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
 /* The MIT License (MIT)
  *
- * Copyright (c) 2016 Brandon Schaefer
+ * Copyright (c) 2017 Brandon Schaefer
  *                    brandontschaefer@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "cpu.h"
+#include "mocks/cpu.h"
 
 namespace
 {
@@ -36,28 +37,42 @@ uint8_t const default_x{0x56};
 uint8_t const default_y{0xF0};
 uint8_t const default_sp{0x0F};
 
-struct MockCPU : emulator::CPU
+void default_setup_cpu(emulator::CPU* cpu)
 {
-    MOCK_METHOD1(add_branch_cycle, void(uint16_t address));
-};
+    cpu->set_program_counter(default_pc);
+    cpu->set_accumulator(default_acc);
+    cpu->set_x_register(default_x);
+    cpu->set_y_register(default_y);
+    cpu->set_stack(default_sp);
+}
 
 struct TestCPUInstructions : ::testing::Test
 {
+    TestCPUInstructions() :
+        cpu(&ppu)
+    {
+    }
+
     void SetUp() override
     {
-        cpu.set_program_counter(default_pc);
-        cpu.set_accumulator(default_acc);
-        cpu.set_x_register(default_x);
-        cpu.set_y_register(default_y);
-        cpu.set_stack(default_sp);
+        default_setup_cpu(&cpu);
+    }
+
+    MockPPU ppu;
+    emulator::CPU cpu;
+};
+
+struct TestMockedCPUInstructions : ::testing::Test
+{
+    void SetUp() override
+    {
+        default_setup_cpu(&cpu);
     }
 
     MockCPU cpu;
 };
-}
 
-/*
-*/
+}
 
 TEST_F(TestCPUInstructions, test_adc)
 {
@@ -531,94 +546,6 @@ TEST_F(TestCPUInstructions, test_jmp)
     EXPECT_EQ(cpu.program_counter(), default_pc + 3);
 }
 
-TEST_F(TestCPUInstructions, test_bcc)
-{
-    using namespace ::testing;
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bcc(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bcs)
-{
-    using namespace ::testing;
-
-    cpu.add_flags(emulator::carry);
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bcs(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_beq)
-{
-    using namespace ::testing;
-
-    cpu.add_flags(emulator::zero);
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::beq(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bmi)
-{
-    using namespace ::testing;
-
-    cpu.add_flags(emulator::sign);
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bmi(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bne)
-{
-    using namespace ::testing;
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bne(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bpl)
-{
-    using namespace ::testing;
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bpl(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bvc)
-{
-    using namespace ::testing;
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bvc(&cpu);
-}
-
-TEST_F(TestCPUInstructions, test_bvs)
-{
-    using namespace ::testing;
-
-    cpu.add_flags(emulator::overflow);
-
-    EXPECT_CALL(cpu, add_branch_cycle(_))
-        .Times(1);
-
-    emulator::bvs(&cpu);
-}
-
 TEST_F(TestCPUInstructions, test_sbc)
 {
     // op code SBC - immediate 
@@ -756,4 +683,92 @@ TEST_F(TestCPUInstructions, test_cpu_step_adc_immediate)
     cpu.step();
 
     EXPECT_EQ(cpu.accumulator(), 0x5 + default_acc);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bcc)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bcc(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bcs)
+{
+    using namespace ::testing;
+
+    cpu.emulator::CPU::add_flags(emulator::carry);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bcs(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_beq)
+{
+    using namespace ::testing;
+
+    cpu.emulator::CPU::add_flags(emulator::zero);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::beq(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bmi)
+{
+    using namespace ::testing;
+
+    cpu.emulator::CPU::add_flags(emulator::sign);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bmi(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bne)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bne(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bpl)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bpl(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bvc)
+{
+    using namespace ::testing;
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bvc(&cpu);
+}
+
+TEST_F(TestMockedCPUInstructions, test_bvs)
+{
+    using namespace ::testing;
+
+    cpu.emulator::CPU::add_flags(emulator::overflow);
+
+    EXPECT_CALL(cpu, add_branch_cycle(_))
+        .Times(1);
+
+    emulator::bvs(static_cast<emulator::CPU*>(&cpu));
 }

@@ -80,6 +80,8 @@ Relative
 #include <functional>
 
 #include "cpu_instructions.h"
+#include "memory.h"
+#include "ppu.h"
 
 namespace emulator
 {
@@ -99,7 +101,7 @@ enum CPUFlag : uint8_t
 class CPU
 {
 public:
-    CPU();
+    explicit CPU(PPU const* ppu);
 
     void reset();
 
@@ -109,7 +111,7 @@ public:
     void write8(uint16_t address, uint8_t value);
 
     // TODO Maybe btter name here or think of their relationship
-    uint16_t address_to_arguemnts() const;
+    uint16_t address_to_arguemnts();
 
     uint16_t program_counter() const;
     uint8_t  accumulator() const;
@@ -148,6 +150,10 @@ public:
 
     void print_instruction() const;
 
+    // DEBUG ONLY
+    void dump_ram() const;
+
+    Memory<65535> memory;
 private:
     uint16_t program_counter_{0};
     uint8_t accumulator_{0};
@@ -156,8 +162,9 @@ private:
     uint8_t stack_{0};
     uint8_t status_{0};
     uint8_t cycles_{0};
+    uint8_t current_cycles_{0};
 
-    std::array<uint8_t, 65536> memory;
+    PPU const* ppu;
 };
 
 }

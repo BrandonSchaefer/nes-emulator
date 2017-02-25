@@ -490,7 +490,6 @@ void emulator::ror(CPU* cpu)
         cpu->write8(address, new_value);
     }
 
-
     update_zero_sign(cpu, new_value);
 }
 

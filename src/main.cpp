@@ -67,7 +67,8 @@ std::ostream& operator<<(std::ostream& os, RomHeader const& header)
 
 int main()
 {
-    emulator::CPU cpu;
+    emulator::PPU ppu;
+    emulator::CPU cpu(&ppu);
 
     auto raw_rom = read_in_file("../super_mario.nes");
     uint32_t current_byte = 0x10;
@@ -127,13 +128,29 @@ int main()
               << "PrgBytes: " << prg.size() << std::endl
               << "ChrBytes: " << chr.size() << std::endl;
 
-    //std::copy(prg.begin(), prg.end(), cpu.memory.begin() + 0x8000);
+    int index = 0x8000;
+    for (auto i = prg.begin(); i != prg.end(); ++i)
+    {
+        cpu.memory.write8(index++, *i);
+    }
+/*
+    std::copy(prg.begin(), prg.end(), cpu.memory.begin() + 0x8000);
+    printf("%lu %i - %i\n", prg.size(), cpu.memory[0xFFFC], cpu.memory[0xFFFD]);
+    */
+    cpu.reset();
 
-    for (auto i = 0u; i < 22; i++)
+    //cpu.memory[0x2002] = 0xFF;
+
+    for (auto i = 0u; i < 200; i++)
     {
         //printf("PC: %i\n", cpu.program_counter());
         printf("%i\n", (int)cpu.step());
+        //cpu.step();
     }
+
+    std::cout << std::endl;
+
+    cpu.dump_ram();
 
     return 0;
 }

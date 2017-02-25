@@ -1,7 +1,7 @@
 //-*- Mode: C++; indent-tabs-mode: nil; tab-width: 4 -*-
 /* The MIT License (MIT)
  *
- * Copyright (c) 2016 Brandon Schaefer
+ * Copyright (c) 2017 Brandon Schaefer
  *                    brandontschaefer@gmail.com
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -27,11 +27,18 @@
 #include <gmock/gmock.h>
 
 #include "cpu.h"
+#include "mocks/ppu.h"
 
 namespace
 {
 struct TestCPU : ::testing::Test
 {
+    TestCPU() :
+        cpu(&ppu)
+    {
+    }
+
+    MockPPU ppu;
     emulator::CPU cpu;
 };
 }

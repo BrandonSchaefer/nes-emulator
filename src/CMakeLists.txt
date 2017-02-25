@@ -16,6 +16,7 @@ set (NES_EMULATOR_LOADER_HDR
      cpu.h
      cpu_instructions.h
      ppu.h
+     memory.h
 )
 
 include_directories (${NES_EMULATOR_INCLUDE_DIRS} ${CMAKE_BINARY_DIR})

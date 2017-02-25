@@ -70,12 +70,13 @@ std::string mode_name(emulator::OpMode mode)
 
 }
 
-emulator::CPU::CPU()
+emulator::CPU::CPU(emulator::PPU const* ppu) :
+    ppu(ppu)
 {
-    memset(memory.data(), 0, memory.size());
     reset();
 
     // TESTING
+    /*
     program_counter_ = 0x0600;
     auto i = program_counter_;
     memory[i] = 0x20;
@@ -97,6 +98,7 @@ emulator::CPU::CPU()
     memory[i + 16] = 0xfb;
     memory[i + 17] = 0x60;
     memory[i + 18] = 0x00;
+    */
     /*
     memory[1] = 0x50;
     memory[2] = 0xFF;
@@ -147,7 +149,7 @@ uint8_t emulator::CPU::stack() const
     return stack_;
 }
 
-uint16_t emulator::CPU::address_to_arguemnts() const
+uint16_t emulator::CPU::address_to_arguemnts()
 {
     auto op   = read8(program_counter_);
     auto info = instruction[op];
@@ -155,17 +157,34 @@ uint16_t emulator::CPU::address_to_arguemnts() const
     switch (info.mode)
     {
         case OpMode::zero_page_x:
-            // Check if page has been crossed
-            return read8(program_counter_ + 1) + x_register_;
+        {
+            auto address = read8(program_counter_ + 1) + x_register_;
+            is_page_crossed(address - x_register_, address);
+
+            return address;
+        }
         case OpMode::zero_page_y:
-            // Check if page has been crossed
-            return read8(program_counter_ + 1) + y_register_;
+        {
+            auto address = read8(program_counter_ + 1) + y_register_;
+            is_page_crossed(address - y_register_, address);
+
+            return address;
+
+        }
         case OpMode::absolute_x:
-            // Check if page has been crossed
-            return read16(program_counter_ + 1) + x_register_;
+        {
+            auto address = read16(program_counter_ + 1) + x_register_;
+            is_page_crossed(address - x_register_, address);
+
+            return address;
+        }
         case OpMode::absolute_y:
-            // Check if page has been crossed
-            return read16(program_counter_ + 1) + y_register_;
+        {
+            auto address = read16(program_counter_ + 1) + y_register_;
+            is_page_crossed(address - y_register_, address);
+
+            return address;
+        }
         case OpMode::indexed_x:
             return read16(read8(program_counter_ + 1) + x_register_);
         case OpMode::indexed_y:
@@ -317,14 +336,15 @@ uint8_t emulator::CPU::read8(uint16_t address) const
 {
     if (address < 0x2000)
     {
-        return memory[address % 0x0800];
+        return memory.read8(address % 0x0800);
     }
     else if (address < 0x4000)
     {
-        return memory[address % 8];
+        // Since the memory repeats every 8 bytes lets just use the same 8 byte location
+        return memory.read8(0x2000 + address % 8);
     }
 
-    return memory[address];
+    return memory.read8(address);
 }
 
 uint16_t emulator::CPU::read16(uint16_t address) const
@@ -340,14 +360,16 @@ void emulator::CPU::write8(uint16_t address, uint8_t value)
 {
     if (address < 0x2000)
     {
-        memory[address % 0x0800] = value;
+        memory.write8(address % 0x0800, value);
     }
     else if (address < 0x4000)
     {
-        memory[address % 8] = value;
+        // TODO Figure out how to best get the ppu registers from the ppu memory
+        //uint8_t ppu_address = 0x2000 + address % 8;
+        //ppu_registers[ppu_address] = value;
     }
 
-    memory[address] = value;
+    memory.write8(address, value);
 }
 
 void emulator::CPU::push(uint8_t byte)
@@ -362,10 +384,10 @@ uint8_t emulator::CPU::pop()
 
 void emulator::CPU::add_branch_cycle(uint16_t address)
 {
-    cycles_++;
+    current_cycles_++;
     if (is_page_crossed(program_counter_, address))
     {
-        cycles_++;
+        current_cycles_++;
     }
 }
 
@@ -379,7 +401,7 @@ uint8_t emulator::CPU::step()
 {
     auto pc = program_counter_;
     auto op = instruction[read8(pc)];
-    cycles_ = op.number_cycles;
+    current_cycles_ = op.number_cycles;
 
     print_instruction();
 
@@ -391,9 +413,8 @@ uint8_t emulator::CPU::step()
         program_counter_ += op.number_bytes;
     }
 
-    // TODO Depending on the mode we may jump a page boundary, need to check
-    // if we need to increment the cycle
-    return cycles_;
+    cycles_ += current_cycles_;
+    return current_cycles_;
 }
 
 void emulator::CPU::print_instruction() const
@@ -424,6 +445,7 @@ void emulator::CPU::print_instruction() const
     }
 
     std::cout << std::endl;
+    /*
 
     std::cout << std::hex
               << " C 0x" << (status_ & emulator::carry)
@@ -434,4 +456,30 @@ void emulator::CPU::print_instruction() const
               << " V 0x" << (status_ & emulator::overflow)
               << " Z 0x" << (status_ & emulator::sign)
               << std::endl;
+              */
+}
+
+// FIXME DEBUG ONLY
+void emulator::CPU::dump_ram() const
+{
+
+    for (auto i = 0u; i < 0x1000; i++)
+    {
+        if (memory.read8(i) <= 0xF)
+        {
+            std::cout << 0;
+        }
+        std::cout << std::hex << (int)memory.read8(i);
+
+        if ((i + 1) % 2 == 0)
+        {
+            std::cout << " ";
+        }
+
+        //if ((i + 1) % 16 == 0)
+        if ((i + 1) % 32 == 0)
+        {
+            std::cout << std::endl;
+        }
+    }
 }
