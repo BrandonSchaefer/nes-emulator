@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "cpu.h"
+#include "cpu_instructions.h"
 #include "mocks/ppu.h"
 
 namespace
@@ -139,4 +140,28 @@ TEST_F(TestCPU, test_push_pop)
 {
     cpu.push(0x1);
     EXPECT_EQ(cpu.pop(), 0x1);
+}
+
+TEST_F(TestCPU, test_step)
+{
+    // op code ADC - immediate
+    auto op = emulator::instruction[0x69];
+    cpu.write8(0x0, 0x69);
+    cpu.write8(0x1, 0x05);
+
+    EXPECT_EQ(cpu.step(), op.number_cycles);
+}
+
+TEST_F(TestCPU, test_step_with_interrupt)
+{
+    cpu.handle_non_maskable_interrupt();
+
+    // op code ADC - immediate
+    auto op = emulator::instruction[0x69];
+    cpu.write8(0x0, 0x69);
+    cpu.write8(0x1, 0x05);
+
+    // Interrupts are 7 cycles, lets set one and check we get an extra 7 to our step count
+    EXPECT_EQ(cpu.step(), op.number_cycles + 7);
+    EXPECT_TRUE(cpu.status() & emulator::interrupt);
 }
