@@ -452,16 +452,6 @@ void emulator::CPU::check_for_interrupt()
     }
 }
 
-/*
-Cycles:
-    Need how long it took for a step
-    Need to return how many cycles the step took
-    Need to update the current total of steps taken
-
-    cycles = current_total
-    <increment based on things>
-
-*/
 uint8_t emulator::CPU::step()
 {
     auto cycles_before_step = cycles_;
