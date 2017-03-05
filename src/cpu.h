@@ -169,7 +169,6 @@ private:
     uint8_t stack_{0};
     uint8_t status_{0};
     uint8_t cycles_{0};
-    uint8_t current_cycles_{0};
 
     bool nmi_interrupt{false};
     bool irq_interrupt{false};

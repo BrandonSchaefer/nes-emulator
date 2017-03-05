@@ -162,7 +162,7 @@ uint16_t emulator::CPU::zero_page_get_address(uint8_t cpu_register)
 
     if (is_page_crossed(address - cpu_register, address))
     {
-        current_cycles_++;
+        cycles_++;
     }
 
     return address;
@@ -174,7 +174,7 @@ uint16_t emulator::CPU::absolute_get_address(uint8_t cpu_register)
 
     if (is_page_crossed(address - cpu_register, address))
     {
-        current_cycles_++;
+        cycles_++;
     }
 
     return address;
@@ -416,10 +416,10 @@ uint8_t emulator::CPU::pop()
 
 void emulator::CPU::add_branch_cycle(uint16_t address)
 {
-    current_cycles_++;
+    cycles_++;
     if (is_page_crossed(program_counter_, address))
     {
-        current_cycles_++;
+        cycles_++;
     }
 }
 
@@ -442,23 +442,34 @@ void emulator::CPU::check_for_interrupt()
     {
         nmi(this);
         nmi_interrupt = false;
-        current_cycles_ += 7;
+        cycles_ += 7;
     }
     else if (irq_interrupt)
     {
         irq(this);
         irq_interrupt = false;
-        current_cycles_ += 7;
+        cycles_ += 7;
     }
 }
 
+/*
+Cycles:
+    Need how long it took for a step
+    Need to return how many cycles the step took
+    Need to update the current total of steps taken
+
+    cycles = current_total
+    <increment based on things>
+
+*/
 uint8_t emulator::CPU::step()
 {
-    auto pc = program_counter_;
-    auto op = instruction[read8(pc)];
-    current_cycles_ = op.number_cycles;
+    auto cycles_before_step = cycles_;
 
     check_for_interrupt();
+
+    auto pc = program_counter_;
+    auto op = instruction[read8(pc)];
 
     print_instruction();
 
@@ -470,8 +481,8 @@ uint8_t emulator::CPU::step()
         program_counter_ += op.number_bytes;
     }
 
-    cycles_ += current_cycles_;
-    return current_cycles_;
+    cycles_ += op.number_cycles;
+    return cycles_ - cycles_before_step;
 }
 
 void emulator::CPU::print_instruction() const
