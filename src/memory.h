@@ -27,6 +27,8 @@
 #define NES_EMULATOR_MEMORY_H_
 
 #include <string.h>
+#include <cstdint>
+#include <array>
 
 namespace emulator
 {

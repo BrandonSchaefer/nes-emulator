@@ -57,16 +57,33 @@ void update_carry(emulator::CPU* cpu, uint32_t value)
     cpu->update_flags([value] { return value > 0xFF; }, emulator::carry);
 }
 
-void branch_if_cond(std::function<bool()> const& f, emulator::CPU* cpu)
+void branch_if_cond(std::function<bool()> const& cond, emulator::CPU* cpu)
 {
-    if (f())
+    if (cond())
     {
         auto address = cpu->address_to_arguemnts();
         cpu->set_program_counter(address);
         cpu->add_branch_cycle(address);
     }
 }
+}
 
+// NMI Non Maskable Interrupt
+void emulator::nmi(CPU* cpu)
+{
+    cpu->push(cpu->program_counter());
+    cpu->push(cpu->status());
+    cpu->set_program_counter(cpu->read16(0xFFFA));
+    cpu->add_flags(emulator::interrupt);
+}
+
+// IRQ Interrupt Request
+void emulator::irq(CPU* cpu)
+{
+    cpu->push(cpu->program_counter());
+    cpu->push(cpu->status());
+    cpu->set_program_counter(cpu->read16(0xFFFE));
+    cpu->add_flags(emulator::interrupt);
 }
 
 // ADC Add Memory to Accumulator with Carry

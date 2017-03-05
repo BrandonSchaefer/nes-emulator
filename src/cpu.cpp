@@ -68,6 +68,13 @@ std::string mode_name(emulator::OpMode mode)
     throw std::runtime_error("Unkown OpMode");
 }
 
+// Is page crossed means we need to incremement the cycle amount
+bool is_page_crossed(uint16_t a, uint16_t b)
+{
+    // Check if we are on different pages, each are 256 bytes
+    return (a & 0xFF00) != (b & 0xFF00);
+}
+
 }
 
 emulator::CPU::CPU(emulator::PPU const* ppu) :
@@ -149,6 +156,30 @@ uint8_t emulator::CPU::stack() const
     return stack_;
 }
 
+uint16_t emulator::CPU::zero_page_get_address(uint8_t cpu_register)
+{
+    auto address = read8(program_counter_ + 1) + cpu_register;
+
+    if (is_page_crossed(address - cpu_register, address))
+    {
+        current_cycles_++;
+    }
+
+    return address;
+}
+
+uint16_t emulator::CPU::absolute_get_address(uint8_t cpu_register)
+{
+    auto address = read16(program_counter_ + 1) + cpu_register;
+
+    if (is_page_crossed(address - cpu_register, address))
+    {
+        current_cycles_++;
+    }
+
+    return address;
+}
+
 uint16_t emulator::CPU::address_to_arguemnts()
 {
     auto op   = read8(program_counter_);
@@ -158,47 +189,48 @@ uint16_t emulator::CPU::address_to_arguemnts()
     {
         case OpMode::zero_page_x:
         {
-            auto address = read8(program_counter_ + 1) + x_register_;
-            is_page_crossed(address - x_register_, address);
-
-            return address;
+            return zero_page_get_address(x_register_);
         }
         case OpMode::zero_page_y:
         {
-            auto address = read8(program_counter_ + 1) + y_register_;
-            is_page_crossed(address - y_register_, address);
-
-            return address;
-
+            return zero_page_get_address(y_register_);
         }
         case OpMode::absolute_x:
         {
-            auto address = read16(program_counter_ + 1) + x_register_;
-            is_page_crossed(address - x_register_, address);
-
-            return address;
+            return absolute_get_address(x_register_);
         }
         case OpMode::absolute_y:
         {
-            auto address = read16(program_counter_ + 1) + y_register_;
-            is_page_crossed(address - y_register_, address);
-
-            return address;
+            return absolute_get_address(y_register_);
         }
         case OpMode::indexed_x:
+        {
             return read16(read8(program_counter_ + 1) + x_register_);
+        }
         case OpMode::indexed_y:
+        {
             return read16(read8(program_counter_ + 1) + y_register_);
+        }
         case OpMode::implicit:
+        {
             return 0;
+        }
         case OpMode::accumulator:
+        {
             return 0;
+        }
         case OpMode::immediate:
+        {
             return program_counter_ + 1;
+        }
         case OpMode::zero_page:
+        {
             return read8(program_counter_ + 1);
+        }
         case OpMode::absolute:
+        {
             return read16(program_counter_ + 1);
+        }
         case OpMode::relative:
         {
             uint16_t offset = read8(program_counter_ + 1);
@@ -391,10 +423,33 @@ void emulator::CPU::add_branch_cycle(uint16_t address)
     }
 }
 
-bool emulator::CPU::is_page_crossed(uint16_t a, uint16_t b) const
+void emulator::CPU::handle_non_maskable_interrupt()
 {
-    // Check if we are on different pages, each are 256 bytes
-    return (a & 0xFF00) != (b & 0xFF00);
+    nmi_interrupt = true;
+}
+
+void emulator::CPU::handle_interrupt_request()
+{
+    if (nmi_interrupt == false)
+    {
+        irq_interrupt = true;
+    }
+}
+
+void emulator::CPU::check_for_interrupt()
+{
+    if (nmi_interrupt)
+    {
+        nmi(this);
+        nmi_interrupt = false;
+        current_cycles_ += 7;
+    }
+    else if (irq_interrupt)
+    {
+        irq(this);
+        irq_interrupt = false;
+        current_cycles_ += 7;
+    }
 }
 
 uint8_t emulator::CPU::step()
@@ -402,6 +457,8 @@ uint8_t emulator::CPU::step()
     auto pc = program_counter_;
     auto op = instruction[read8(pc)];
     current_cycles_ = op.number_cycles;
+
+    check_for_interrupt();
 
     print_instruction();
 

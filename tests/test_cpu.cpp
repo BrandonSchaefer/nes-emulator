@@ -140,14 +140,3 @@ TEST_F(TestCPU, test_push_pop)
     cpu.push(0x1);
     EXPECT_EQ(cpu.pop(), 0x1);
 }
-
-// Pages for the 6502 are 256 bytes
-TEST_F(TestCPU, is_page_crossed)
-{
-    EXPECT_TRUE(cpu.is_page_crossed(0xFF00, 0xFE00));
-}
-
-TEST_F(TestCPU, is_page_not_crossed)
-{
-    EXPECT_FALSE(cpu.is_page_crossed(0xFF00, 0xFF00));
-}

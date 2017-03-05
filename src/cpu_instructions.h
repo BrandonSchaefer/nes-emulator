@@ -68,6 +68,11 @@ struct OpInfo
     std::function<void(CPU* cpu)> func;
 };
 
+// iterrupts
+extern void nmi(CPU* cpu);
+extern void irq(CPU* cpu);
+
+// op codes
 extern void adc(CPU* cpu);
 extern void ahx(CPU* cpu);
 extern void alr(CPU* cpu);

@@ -144,7 +144,9 @@ public:
     uint8_t pop();
 
     virtual void add_branch_cycle(uint16_t address);
-    bool is_page_crossed(uint16_t a, uint16_t b) const;
+
+    void handle_non_maskable_interrupt();
+    void handle_interrupt_request();
 
     uint8_t step();
 
@@ -155,6 +157,11 @@ public:
 
     Memory<65535> memory;
 private:
+    uint16_t zero_page_get_address(uint8_t cpu_register);
+    uint16_t absolute_get_address(uint8_t cpu_register);
+
+    void check_for_interrupt();
+
     uint16_t program_counter_{0};
     uint8_t accumulator_{0};
     uint8_t x_register_{0};
@@ -163,6 +170,9 @@ private:
     uint8_t status_{0};
     uint8_t cycles_{0};
     uint8_t current_cycles_{0};
+
+    bool nmi_interrupt{false};
+    bool irq_interrupt{false};
 
     PPU const* ppu;
 };

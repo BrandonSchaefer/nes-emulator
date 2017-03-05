@@ -70,6 +70,10 @@ int main()
     emulator::PPU ppu;
     emulator::CPU cpu(&ppu);
 
+    ppu.set_non_maskable_interrupt_handler([&cpu] {
+        cpu.handle_non_maskable_interrupt();
+    });
+
     auto raw_rom = read_in_file("../super_mario.nes");
     uint32_t current_byte = 0x10;
 
